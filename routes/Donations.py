@@ -28,17 +28,18 @@ def create_donation():
 
 @donations_bp.route('/donations/<int:donation_id>', methods=['GET'])
 def get_donation(donation_id):
-    donation = donations.get(donation_id)
+    donation = Donations.query.get(donation_id)
     if not donation:
-        return jsonify({'error': 'Donation not found'}), 404 # client‑error status code
-    return jsonify(donation)
+        return jsonify({'error': 'Donation not found'}), 404
+    return jsonify(donation.to_dict())
 
 @donations_bp.route('/donations', methods=['GET'])
 def list_donations():
-    return jsonify(list(donations.values()))
+    donations = Donations.query.all()
+    return jsonify([donation.to_dict() for donation in donations])
 
 @donations_bp.route('/donations/<int:donation_id>', methods=['PUT'])
-def update_donation(donation_id):client‑error status code
+def update_donation(donation_id):
     donation = donations.get(donation_id)
     if not donation:
         return jsonify({'error': 'Donation not found'}), 404
