@@ -1,30 +1,19 @@
 from datetime import datetime
+from .BaseModel import BaseModel
+from sqlalchemy_serializer import SerializerMixin
 
-class Donor:
-    def __init__(self, id, name, email, phone=None, address=None, is_anonymous=False, donation_frequency='one-time', created_at=None, updated_at=None):
-        self.id = id
-        self.name = name
-        self.email = email
-        self.phone = phone
-        self.address = address
-        self.is_anonymous = is_anonymous
-        self.donation_frequency = donation_frequency
-        self.created_at = created_at if created_at else datetime.now()
-        self.updated_at = updated_at if updated_at else datetime.now()
+class Donor(BaseModel):
+    __tablename__ = "donors"
 
-    def __str__(self):
-        return f"Donor(id={self.id}, name={self.name}, email={self.email}, anonymous={self.is_anonymous}, frequency={self.donation_frequency})"
+    serialize_rules = ('-donations.donor',)
 
-    def update_contact_info(self, phone=None, address=None):
-        if phone:
-            self.phone = phone
-        if address:
-            self.address = address
-
-    def set_anonymous(self, is_anonymous):
-        self.is_anonymous = is_anonymous
-        self.updated_at = datetime.now()
-
-    def set_donation_frequency(self, frequency):
-        self.donation_frequency = frequency
-        self.updated_at = datetime.now()
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    phone = db.Column(db.String(20))
+    address = db.Column(db.String(200))
+    is_anonymous = db.Column(db.Boolean, default=False)
+    donation_frequency = db.Column(db.String(20), default='one-time')
+    
+    # Relationship with donations if needed
+    donations = db.relationship('Donations', back_populates='donor')

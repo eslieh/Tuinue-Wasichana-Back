@@ -1,11 +1,15 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy_serializer import SerializerMixin
 
 Base = declarative_base()
 
-class Inventory(Base):
+class Inventory(Base, SerializerMixin):
     __tablename__ = 'inventories'
+
+    # Specify which relationships to serialize
+    serialize_rules = ('-charity.inventories',)
 
     id = Column(Integer, primary_key=True)
     charity_id = Column(Integer, ForeignKey('charities.id'), nullable=False)
