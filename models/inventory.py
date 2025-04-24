@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -17,4 +17,4 @@ class Inventory(BaseModel):
     charity = db.relationship("Charity", back_populates="inventories")
 
     def __repr__(self):
-        return f"<Inventory(id={self.id}, product={self.product}, quantity={self.product_quantity}, beneficiary={self.beneficiary_name})>"
+        return f"<Charity {self.organisation_name}>"
