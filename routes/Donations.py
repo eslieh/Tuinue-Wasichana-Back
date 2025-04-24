@@ -7,24 +7,18 @@ donation_id_counter = 1
 
 @donations_bp.route('/donations', methods=['POST'])
 def create_donation():
-    global donation_id_counter
-    data = request.get_json()
-    required_fields = ['donor_id', 'charity_id', 'amount', 'donation_type']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'error': f'Missing field: {field}'}), 400
-
-    donation = {
-        'id': donation_id_counter,
-        'donor_id': data['donor_id'],
-        'charity_id': data['charity_id'],
-        'amount': data['amount'],
-        'donation_type': data['donation_type'],  # e.g, one-time or monthly
-        'timestamp': data.get('timestamp')
-    }
-    donations[donation_id_counter] = donation
-    donation_id_counter += 1
-    return jsonify(donation), 201 #success status code
+    try:
+        data = request.get_json()
+        required_fields = ['donor_id', 'charity_id', 'amount']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+            
+        donation = Donations(**data)
+        db.session.add(donation)
+        db.session.commit()
+        return jsonify(donation.to_dict()), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 @donations_bp.route('/donations/<int:donation_id>', methods=['GET'])
 def get_donation(donation_id):
@@ -53,8 +47,12 @@ def update_donation(donation_id):
 
 @donations_bp.route('/donations/<int:donation_id>', methods=['DELETE'])
 def delete_donation(donation_id):
-    if donation_id in donations:
-        del donations[donation_id]
-        return jsonify({'message': 'Donation deleted'})
-    else:
-        return jsonify({'error': 'Donation not found'}), 404
+    try:
+        donation = Donations.query.get(donation_id)
+        if not donation:
+            return jsonify({'error': 'Donation not found'}), 404
+        db.session.delete(donation)
+        db.session.commit()
+        return jsonify({'message': 'Donation deleted successfully'}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400

@@ -6,8 +6,6 @@ db = SQLAlchemy()
 
 class Donations(BaseModel):
     __tablename__ = "donations"
-
-<<<<<<< HEAD
     serialize_rules = ('-donor.donations', '-charity.donations')
 
     id = db.Column(db.Integer, primary_key=True)
@@ -19,10 +17,3 @@ class Donations(BaseModel):
     # Relationships
     donor = db.relationship('Donor', back_populates='donations')
     charity = db.relationship('Charity', back_populates='donations')
-=======
-    id = db.Column(db.Integer, primary_key = True)
-    amount = db.Column(db.Integer, nullable = False)
-    is_recurring = db.Column(db.Boolean, default = False)
-
-    def 
->>>>>>> development
