@@ -1,20 +1,30 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
+from BaseModel import Base  
 
-Base = declarative_base()
 
-class Inventory(Base):
-    __tablename__ = 'inventories'
 
-    id = Column(Integer, primary_key=True)
-    charity_id = Column(Integer, ForeignKey('charities.id'), nullable=False)
-    product = Column(String(100), nullable=False)
-    product_quantity = Column(Integer, nullable=False)
-    beneficiary_name = Column(String(100), nullable=False)
+class Charity(User):  
+    __tablename__ = "charities"
+    
+    id = Column(Integer, ForeignKey('users.id'), primary_key=True)  
+    organisation_name = Column(String(120), nullable=False)
+    organisation_description = Column(Text, nullable=True)
+    logo = Column(String(255), nullable=True)  # path or URL
+    approved = Column(Boolean, default=False)
 
-    # Establishing the relationship with Charity
-    charity = relationship("Charity", back_populates="inventories")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    stories = relationship('Story', back_populates='charity')  
+    donations = relationship('Donation', back_populates='charity')  
+    inventories = relationship('Inventory', back_populates='charity')  
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'charity',
+    }
 
     def __repr__(self):
-        return f"<Inventory(id={self.id}, product={self.product}, quantity={self.product_quantity}, beneficiary={self.beneficiary_name})>"
+        return f"<Charity {self.organisation_name}>"
