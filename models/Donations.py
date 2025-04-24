@@ -8,4 +8,6 @@ class Donations(BaseModel):
 
     id = db.Column(db.Integer, primary_key = True)
     amount = db.Column(db.Integer, nullable = False)
-    is_recurring = db.Column(db.Boolean, default)
+    is_recurring = db.Column(db.Boolean, default = False)
+
+    def 
