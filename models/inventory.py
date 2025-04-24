@@ -1,10 +1,11 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_serializer import SerializerMixin
 
 db = SQLAlchemy()
 
+<<<<<<< HEAD
 class Inventory(BaseModel, SerializerMixin):
     __tablename__ = 'inventories'
 
@@ -16,9 +17,19 @@ class Inventory(BaseModel, SerializerMixin):
     product = db.Column(String(100), nullable=False)
     product_quantity = db.Column(Integer, nullable=False)
     beneficiary_name = db.Column(String(100), nullable=False)
+=======
+class Inventory(BaseModel):
+    __tablename__ = 'inventories'
+
+    id = db.Column(db.Integer, primary_key=True)
+    charity_id = db.Column(db.Integer, db.ForeignKey('charities.id'), nullable=False)
+    product = db.Column(db.String(100), nullable=False)
+    product_quantity = db.Column(db.Integer, nullable=False)
+    beneficiary_name = db.Column(db.String(100), nullable=False)
+>>>>>>> development
 
     # Establishing the relationship with Charity
     charity = db.relationship("Charity", back_populates="inventories")
 
     def __repr__(self):
-        return f"<Inventory(id={self.id}, product={self.product}, quantity={self.product_quantity}, beneficiary={self.beneficiary_name})>"
+        return f"<Charity {self.organisation_name}>"
