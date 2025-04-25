@@ -1,15 +1,19 @@
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_serializer import SerializerMixin
 from flask_bcrypt import Bcrypt
+from .BaseModel import BaseModel
 
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
 class User(BaseModel):
     __tablename__ = "users"
+    
+    # Specify which fields to exclude from serialization
+    serialize_rules = ('-password_hash',)
 
     id = db.Column(db.Integer, primary_key = True)
-    username = db.Column(db.String(100), unique = True , nullable = False)
+    username = db.Column(db.String(100), unique = True, nullable = False)
     email = db.Column(db.String(120), unique = True, nullable = False)
     password_hash = db.Column(db.String(120), unique = True, nullable = False)
     user_type = db.Column(db.String, nullable = False)
@@ -25,6 +29,6 @@ class User(BaseModel):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)  
     def __repr__(self):
-        return f"<{self.username}>"      
+        return f"<{self.username}>"
 
-   
+
