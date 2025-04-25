@@ -6,6 +6,7 @@ db = SQLAlchemy()
 
 class Donations(BaseModel):
     __tablename__ = "donations"
+
     serialize_rules = ('-donor.donations', '-charity.donations')
 
     id = db.Column(db.Integer, primary_key=True)
