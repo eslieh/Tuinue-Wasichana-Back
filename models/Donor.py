@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-
-=======
 from datetime import datetime
 from .BaseModel import BaseModel
 from sqlalchemy_serializer import SerializerMixin
@@ -20,4 +17,3 @@ class Donor(BaseModel):
     
     # Relationship with donations if needed
     donations = db.relationship('Donations', back_populates='donor')
->>>>>>> 7e73f8123acded6da5f43f186aec7af992fe2e99
