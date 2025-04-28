@@ -34,7 +34,7 @@ class User(BaseModel):
     is_verified = db.Column(db.Boolean, default=False)
 
     charity_application = db.relationship('CharityApplication', back_populates='user', uselist=False, cascade="all, delete-orphan")
-    donations = db.relationship('Donation', back_populates='donor', cascade="all, delete-orphan")
+    donations = db.relationship('Donation', back_populates='user', cascade="all, delete-orphan")
     charity_profile = db.relationship('Charity', back_populates='user', uselist=False, cascade="all, delete-orphan")
 
     serialize_rules = ("-charity_application.user","-donations.donor", "-charity_profile.user",)
@@ -73,7 +73,7 @@ class Donor(User):
     anonymous_donor = db.Column(db.Boolean, default=False)
     donation_frequency = db.Column(db.String, default='one-time')
 
-    donations = db.relationship('Donation', back_populates='donor', cascade="all, delete-orphan")
+    donations = db.relationship('Donation', back_populates='donor', cascade="all, delete-orphan",)
 
     serialize_rules = ("-donations.donor",)
 
@@ -91,13 +91,16 @@ class Donation(BaseModel):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'), nullable=False)
     charity_id = db.Column(db.Integer, db.ForeignKey('charities.id'), nullable=False)
 
-    donor = db.relationship('Donor', back_populates='donations')
-    charity = db.relationship('Charity', back_populates='donations')
+    donor = db.relationship('Donor', back_populates='donations',foreign_keys=[donor_id])
+    user = db.relationship('User', back_populates='donations',foreign_keys=[user_id])
+    charity = db.relationship('Charity', back_populates='donations', foreign_keys=[charity_id])
 
-    serialize_rules = ("-donor.donations","-charity.donations",)
+
+    serialize_rules = ("-donor.donations","-user.donations","-charity.donations",)
 
 class Charity(User):
     __tablename__ = 'charities'
