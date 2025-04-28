@@ -16,6 +16,9 @@ def create_app():
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
     # App configurations
+    # allow only your Vite dev server on port 5173
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tuinue_wasichana.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.secret_key = 'super-secret-key'
