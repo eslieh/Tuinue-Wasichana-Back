@@ -10,6 +10,7 @@ import os
 from flask import Flask
 from flask_migrate import Migrate
 from flask_cors import CORS
+from models import db, bcrypt
 from dotenv import load_dotenv
 from flask_jwt_extended import JWTManager
 
@@ -23,6 +24,9 @@ load_dotenv()
 
 def create_app():
     app = Flask(__name__)
+    
+    # App configurations
+    # allow only your Vite dev server on port 5173
     CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tuinue_wasichana.db'
