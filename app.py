@@ -3,7 +3,8 @@ from flask_migrate import Migrate
 from models import db, bcrypt
 from dotenv import load_dotenv
 from utils import redis_client  
-from routes.authentication import auth_bp  
+from routes.authentication import auth_bp 
+from routes.charity import charity_bp 
 
 # Load environment variables
 load_dotenv()
@@ -23,6 +24,7 @@ def create_app():
 
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(charity_bp, url_prefix='/charities')
 
     return app
 

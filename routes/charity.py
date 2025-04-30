@@ -1,76 +1,65 @@
-from flask import Blueprint, request, jsonify
-from models.charity import Charity
-from models.user import User
-from config import db  
-from sqlalchemy.exc import SQLAlchemyError
+from flask import Blueprint, request, jsonify,session
+from models import Charity, Donation, Donor, User, db
+from sqlalchemy.orm import joinedload
 
-charity_bp = Blueprint('charity_bp', __name__, url_prefix='/charities')
+charity_bp = Blueprint('charities', __name__)
 
-
-@charity_bp.route('', methods=['POST'])
-def create_charity():
-    data = request.get_json()
-    try:
-        new_user = User(
-            username=data.get("username"),
-            email=data.get("email"),
-            user_type="charity"
-        )
-        new_user.set_password(data.get("password"))
-        db.session.add(new_user)
-        db.session.flush()  
-
-        charity = Charity(
-            id=new_user.id, 
-            organisation_name=data.get("organisation_name"),
-            organisation_description=data.get("organisation_description"),
-            logo=data.get("logo"),
-            approved=False
-        )
-        db.session.add(charity)
-        db.session.commit()
-        return jsonify(charity.to_dict()), 201
-
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
-@charity_bp.route('/<int:id>', methods=['GET'])
-def get_charity(id):
-    charity = Charity.query.get(id)
-    if not charity:
-        return jsonify({"error": "Charity not found"}), 404
-    return jsonify(charity.to_dict()), 200
-
-
-@charity_bp.route('/<int:id>', methods=['PUT'])
-def update_charity(id):
-    data = request.get_json()
-    charity = Charity.query.get(id)
-    if not charity:
-        return jsonify({"error": "Charity not found"}), 404
-
-    charity.organisation_name = data.get("organisation_name", charity.organisation_name)
-    charity.organisation_description = data.get("organisation_description", charity.organisation_description)
-    charity.logo = data.get("logo", charity.logo)
-
-    db.session.commit()
-    return jsonify(charity.to_dict()), 200
-
-
-@charity_bp.route('', methods=['GET'])
+@charity_bp.route('/', methods=['GET'])
 def list_charities():
-    charities = Charity.query.filter_by(approved=True).all()
+    charities = Charity.query.all()
     return jsonify([charity.to_dict() for charity in charities]), 200
 
+@charity_bp.route('/<int:charity_id>', methods=['GET'])
+def get_charity_details(charity_id):
+    charity = Charity.query.options(joinedload(Charity.donations).joinedload(Donation.donor)).filter_by(id=charity_id).first()
 
-@charity_bp.route('/<int:id>/approve', methods=['PATCH'])
-def approve_charity(id):
-    charity = Charity.query.get(id)
     if not charity:
         return jsonify({"error": "Charity not found"}), 404
 
-    charity.approved = True
+    donations_data = []
+    for donation in charity.donations:
+        donor_name = "Anonymous" if donation.is_anonymous else donation.donor.name
+        donations_data.append({
+            "donor": donor_name,
+            "amount": donation.amount,
+            "is_recurring": donation.is_recurring,
+            "status": donation.status,
+            "created_at": donation.created_at.isoformat()
+        })
+
+    return jsonify({
+        "id": charity.id,
+        "name": charity.name,
+        "description": charity.organisation_description,
+        "donations": donations_data
+    }), 200
+
+@charity_bp.route('/', methods=['POST'])
+def create_charity_profile():
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        return jsonify({"error": "Unauthorized. Please log in."}), 401
+
+    user = User.query.get(user_id)
+
+    if not user or user.user_type != "charity":
+        return jsonify({"error": "Only users with type 'charity' can create a charity profile."}), 403
+
+    if user.charity_profile:
+        return jsonify({"error": "Charity profile already exists for this user."}), 400
+
+    data = request.get_json()
+
+    charity = Charity(
+        id=user.id,
+        organisation_name=data.get("organisation_name"),
+        organisation_description=data.get("organisation_description"),
+        logo_url=data.get("logo_url")
+    )
+
+    db.session.add(charity)
     db.session.commit()
-    return jsonify({"message": "Charity approved", "charity": charity.to_dict()}), 200
+
+    return jsonify(charity.to_dict()), 201
+
