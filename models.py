@@ -28,7 +28,7 @@ class User(BaseModel):
     __tablename__ = 'users'
 
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
+    email = db.Column(db.String, unique=False, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     user_type = db.Column(db.String, nullable=False) 
     is_verified = db.Column(db.Boolean, default=False)
@@ -75,6 +75,7 @@ class Donor(User):
 
     donations = db.relationship('Donation', back_populates='donor', cascade="all, delete-orphan",)
 
+   
     serialize_rules = ("-donations.donor",)
 
     __mapper_args__ = {
@@ -99,6 +100,12 @@ class Donation(BaseModel):
     user = db.relationship('User', back_populates='donations',foreign_keys=[user_id])
     charity = db.relationship('Charity', back_populates='donations', foreign_keys=[charity_id])
 
+    def to_dict_simple(self):
+        return {
+            "id": self.id,
+            "amount": self.amount,
+            "donor_name": self.donor.name if not self.is_anonymous else "Anonymous"
+        }
 
     serialize_rules = ("-donor.donations","-user.donations","-charity.donations",)
 
@@ -115,6 +122,14 @@ class Charity(User):
     donations = db.relationship('Donation', back_populates='charity', cascade="all, delete-orphan")
     inventories = db.relationship('Inventory', back_populates='charity', cascade="all, delete-orphan")
     user = db.relationship('User', back_populates='charity_profile')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.organisation_description,
+            "donations": [donation.to_dict_simple() for donation in self.donations]
+        }
 
     serialize_rules = ('-stories.charity', '-donations.charity', '-inventories.charity',"-user.charity_profile",)
 

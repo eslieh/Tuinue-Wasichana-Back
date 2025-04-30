@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import Admin, Donor, Charity, User, db
 from utils import generate_verification_token, send_verification_email, redis_client
 
@@ -73,6 +73,38 @@ def verify_token():
     redis_client.delete(f"pending:{email}")
 
     return jsonify({"message": "Account created successfully!"}), 201
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not all([email, password]):
+        return jsonify({"error": "Email and password are required."}), 400
+
+    # Try to find the user (could be Admin, Donor, Charity)
+    user = (
+        Admin.query.filter_by(email=email).first() or
+        Donor.query.filter_by(email=email).first() or
+        Charity.query.filter_by(email=email).first()
+    )
+
+    if not user or not user.check_password(password):
+        return jsonify({"error": "Invalid email or password."}), 401
+    
+    session['user_id'] = user.id
+    session['user_type'] = user.__class__.__name__.lower()
+
+    return jsonify({
+        "message": "Login successful!",
+        "user": {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "user_type": user.__class__.__name__.lower()
+        }
+    }), 200
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
