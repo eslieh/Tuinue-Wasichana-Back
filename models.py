@@ -28,7 +28,7 @@ class User(BaseModel):
     __tablename__ = 'users'
 
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
+    email = db.Column(db.String, unique=False, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     user_type = db.Column(db.String, nullable=False) 
     is_verified = db.Column(db.Boolean, default=False)
