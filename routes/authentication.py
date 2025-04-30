@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import Admin, Donor, Charity, User, db
 from utils import generate_verification_token, send_verification_email, redis_client
 
@@ -92,8 +92,10 @@ def login():
 
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid email or password."}), 401
+    
+    session['user_id'] = user.id
+    session['user_type'] = user.__class__.__name__.lower()
 
-    # (Optional) Here you would normally generate a session token or JWT
     return jsonify({
         "message": "Login successful!",
         "user": {

@@ -37,7 +37,6 @@ def get_charity_details(charity_id):
 @charity_bp.route('/', methods=['POST'])
 def create_charity_profile():
     user_id = session.get('user_id')
-    
     if not user_id:
         return jsonify({"error": "Unauthorized. Please log in."}), 401
 
@@ -46,20 +45,34 @@ def create_charity_profile():
     if not user or user.user_type != "charity":
         return jsonify({"error": "Only users with type 'charity' can create a charity profile."}), 403
 
-    if user.charity_profile:
-        return jsonify({"error": "Charity profile already exists for this user."}), 400
-
     data = request.get_json()
 
+    # Check if charity profile already exists
+    if user.charity_profile:
+        charity = user.charity_profile
+
+        # Ensure charity profile is not fully created already
+        if charity.organisation_name or charity.organisation_description or charity.logo_url:
+            return jsonify({"error": "Charity profile already exists for this user."}), 400
+
+        # Update the existing charity profile
+        charity.organisation_name = data.get("organisation_name")
+        charity.organisation_description = data.get("organisation_description")
+        charity.logo_url = data.get("logo_url")
+
+        db.session.commit()  # Commit only charity changes
+        return jsonify(charity.to_dict()), 200
+
+    # Create a new charity profile if none exists
     charity = Charity(
         id=user.id,
         organisation_name=data.get("organisation_name"),
         organisation_description=data.get("organisation_description"),
         logo_url=data.get("logo_url")
     )
+    charity.user = user
 
-    db.session.add(charity)
-    db.session.commit()
+    db.session.add(charity)  # Add charity only, don't modify the user here
+    db.session.commit()  # Commit only charity changes
 
     return jsonify(charity.to_dict()), 201
-
