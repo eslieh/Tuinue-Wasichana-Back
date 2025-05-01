@@ -6,6 +6,10 @@ from dotenv import load_dotenv
 from utils import redis_client  
 from routes.authentication import auth_bp 
 from routes.charity import charity_bp 
+from routes.admin import admin_bp
+from routes.stories import story_bp
+from routes.Donations import donation_bp
+from routes.inventory import inventory_bp
 
 # Load environment variables
 load_dotenv()
@@ -32,6 +36,10 @@ def create_app():
     # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(charity_bp, url_prefix='/charities')
+    app.register_blueprint(admin_bp, url_prefix='/admin')
+    app.register_blueprint(story_bp, url_prefix='/stories')
+    app.register_blueprint(donation_bp, url_prefix='/donations')
+    app.register_blueprint(inventory_bp, url_prefix='/inventory')
 
     return app
 
