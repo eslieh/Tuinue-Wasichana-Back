@@ -17,7 +17,7 @@ from flask_jwt_extended import JWTManager
 from models import db, bcrypt
 from utils import redis_client
 from routes.authentication import auth_bp
-from routes.charity import charity_bp
+# from routes.charity import charity_bp
 
 # Load .env variables
 load_dotenv()
@@ -27,7 +27,7 @@ def create_app():
     
     # App configurations
     # allow only your Vite dev server on port 5173
-    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}})
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5174"}})
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tuinue_wasichana.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -40,7 +40,7 @@ def create_app():
     JWTManager(app)
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(charity_bp, url_prefix='/charities')
+    # app.register_blueprint(charity_bp, url_prefix='/charities')
     return app
 
 if __name__ == '__main__':
