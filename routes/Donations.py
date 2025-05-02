@@ -1,58 +1,69 @@
 from flask import Blueprint, request, jsonify
+from models import db, Donation, Charity, Donor
+from datetime import datetime
 
-donations_bp = Blueprint('donations', __name__)
+donation_bp = Blueprint('donation', __name__, url_prefix='/donations')
 
-donations = {}
-donation_id_counter = 1
 
-@donations_bp.route('/donations', methods=['POST'])
-def create_donation():
-    try:
-        data = request.get_json()
-        required_fields = ['donor_id', 'charity_id', 'amount']
-        if not all(field in data for field in required_fields):
-            return jsonify({'error': 'Missing required fields'}), 400
-            
-        donation = Donations(**data)
-        db.session.add(donation)
-        db.session.commit()
-        return jsonify(donation.to_dict()), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# GET: View all donations for a single charity
+@donation_bp.route('/charity/<int:charity_id>', methods=['GET'])
+def get_charity_donations(charity_id):
+    charity = Charity.query.get(charity_id)
+    if not charity:
+        return jsonify({"error": "Charity not found."}), 404
 
-@donations_bp.route('/donations/<int:donation_id>', methods=['GET'])
-def get_donation(donation_id):
-    donation = Donations.query.get(donation_id)
-    if not donation:
-        return jsonify({'error': 'Donation not found'}), 404
-    return jsonify(donation.to_dict())
+    donations = Donation.query.filter_by(charity_id=charity_id).all()
+    donation_list = []
+    for donation in donations:
+        donation_list.append({
+            "id": donation.id,
+            "donor_name": "Anonymous" if donation.is_anonymous else donation.donor.name,
+            "amount": donation.amount,
+            "frequency": donation.donor.donation_frequency,
+            "date": donation.created_at.strftime('%Y-%m-%d')
+        })
 
-@donations_bp.route('/donations', methods=['GET'])
-def list_donations():
-    donations = Donations.query.all()
-    return jsonify([donation.to_dict() for donation in donations])
+    return jsonify(donation_list), 200
 
-@donations_bp.route('/donations/<int:donation_id>', methods=['PUT'])
-def update_donation(donation_id):
-    donation = donations.get(donation_id)
-    if not donation:
-        return jsonify({'error': 'Donation not found'}), 404
+
+# POST: Donor makes a donation to a charity
+@donation_bp.route('/', methods=['POST'])
+def make_donation():
     data = request.get_json()
-    # This Allows updating amount and donation_type only for simplicity
-    if 'amount' in data:
-        donation['amount'] = data['amount']
-    if 'donation_type' in data:
-        donation['donation_type'] = data['donation_type']
-    return jsonify(donation)
 
-@donations_bp.route('/donations/<int:donation_id>', methods=['DELETE'])
-def delete_donation(donation_id):
-    try:
-        donation = Donations.query.get(donation_id)
-        if not donation:
-            return jsonify({'error': 'Donation not found'}), 404
-        db.session.delete(donation)
-        db.session.commit()
-        return jsonify({'message': 'Donation deleted successfully'}), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+    required_fields = ['donor_id', 'charity_id', 'amount', 'donation_frequency', 'is_anonymous']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing required fields."}), 400
+
+    donor = Donor.query.get(data['donor_id'])
+    charity = Charity.query.get(data['charity_id'])
+
+    if not donor:
+        return jsonify({"error": "Donor not found."}), 404
+    if not charity:
+        return jsonify({"error": "Charity not found."}), 404
+
+    # Update donation frequency on donor profile
+    donor.donation_frequency = data['donation_frequency']
+
+    new_donation = Donation(
+        amount=data['amount'],
+        is_anonymous=data['is_anonymous'],
+        is_recurring=(data['donation_frequency'].lower() != "one-time"),
+        donor=donor,
+        charity=charity,
+        user=donor  # link to user as well
+    )
+    db.session.add(new_donation)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Donation successful.",
+        "donation": {
+            "id": new_donation.id,
+            "amount": new_donation.amount,
+            "donor_name": "Anonymous" if new_donation.is_anonymous else donor.name,
+            "frequency": donor.donation_frequency,
+            "date": new_donation.created_at.strftime('%Y-%m-%d')
+        }
+    }), 201
