@@ -1,10 +1,8 @@
 from flask import Blueprint, request, jsonify
-from models.charity import Charity, CharityApplication
-from models.user import User
-from config import db
+from models import Charity, CharityApplication, User, db
 from sqlalchemy.exc import SQLAlchemyError
 
-charity_bp = Blueprint('charity_bp', __name__, url_prefix='/charity')
+charity_bp = Blueprint('charity_bp', __name__)
 
 @charity_bp.route('/apply', methods=['POST'])
 def apply_for_charity():

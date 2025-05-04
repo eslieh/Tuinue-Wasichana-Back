@@ -1,42 +1,61 @@
 from flask import Blueprint, request, jsonify
+from models import db, Inventory, Charity
 from datetime import datetime
-from ..models.inventory import Inventory
-from ..models.charity import Charity
-from .. import db
 
-inventory_bp = Blueprint('inventory_bp', __name__)
+inventory_bp = Blueprint('inventory', __name__)
 
-@inventory_bp.route('/inventory', methods=['POST'])
-def create_delivery():
-    try:
-        data = request.get_json()
-        new_delivery = Inventory(
-            charity_id=data['charity_id'],
-            product=data['product'],
-            product_quantity=data['product_quantity'],
-            beneficiary_name=data['beneficiary_name']
-        )
-        db.session.add(new_delivery)
-        db.session.commit()
-        return jsonify(new_delivery.to_dict()), 201
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
 
-@inventory_bp.route('/inventory', methods=['GET'])
-def get_all_deliveries():
-    try:
-        deliveries = Inventory.query.all()
-        return jsonify([delivery.to_dict() for delivery in deliveries]), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+# GET: All inventory items for a specific charity
+@inventory_bp.route('/charity/<int:charity_id>', methods=['GET'])
+def get_inventory_for_charity(charity_id):
+    charity = Charity.query.get(charity_id)
+    if not charity:
+        return jsonify({"error": "Charity not found."}), 404
 
-@inventory_bp.route('/charities/<int:charity_id>/inventory', methods=['GET'])
-def get_charity_inventory(charity_id):
-    try:
-        charity = Charity.query.get(charity_id)
-        if not charity:
-            return jsonify({'error': 'Charity not found'}), 404
-        deliveries = Inventory.query.filter_by(charity_id=charity_id).all()
-        return jsonify([delivery.to_dict() for delivery in deliveries]), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 400
+    inventory_items = Inventory.query.filter_by(charity_id=charity_id).all()
+    results = []
+    for item in inventory_items:
+        results.append({
+            "id": item.id,
+            "product": item.product,
+            "quantity": item.product_quantity,
+            "beneficiary": item.beneficiary_name,
+            "date_added": item.created_at.strftime('%Y-%m-%d')
+        })
+
+    return jsonify(results), 200
+
+
+# POST: Add a new inventory item
+@inventory_bp.route('/', methods=['POST'])
+def add_inventory():
+    data = request.get_json()
+    required_fields = ['charity_id', 'product', 'quantity', 'beneficiary']
+
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing fields in request."}), 400
+
+    charity = Charity.query.get(data['charity_id'])
+    if not charity:
+        return jsonify({"error": "Charity not found."}), 404
+
+    new_item = Inventory(
+        charity_id=charity.id,
+        product=data['product'],
+        product_quantity=data['quantity'],
+        beneficiary_name=data['beneficiary']
+    )
+
+    db.session.add(new_item)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Inventory item added successfully.",
+        "item": {
+            "id": new_item.id,
+            "product": new_item.product,
+            "quantity": new_item.product_quantity,
+            "beneficiary": new_item.beneficiary_name,
+            "date_added": new_item.created_at.strftime('%Y-%m-%d')
+        }
+    }), 201

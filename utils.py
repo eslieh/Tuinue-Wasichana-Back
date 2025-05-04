@@ -8,6 +8,11 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 # Configure Redis connection
+import os
+from redis import exceptions as redis_exceptions
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 try:
     redis_client = redis.from_url(REDIS_URL, decode_responses=True)
@@ -26,14 +31,12 @@ except redis_exceptions.ConnectionError:
             self._store.pop(key, None)
     redis_client = _DummyRedis()
 
-
 def generate_verification_token(length=6):
     """Generate a random numeric verification token."""
     return ''.join(random.choices(string.digits, k=length))
 
 
 def store_token(email, token, expiration_seconds=300):
-    """Store token in Redis with an expiration."""
     try:
         redis_client.setex(f"verify:{email}", expiration_seconds, token)
     except Exception as e:
@@ -41,15 +44,12 @@ def store_token(email, token, expiration_seconds=300):
         print(f"[ERROR] Failed to store token for {email}: {e}")
         raise
 
-
 def retrieve_token(email):
-    """Retrieve token from Redis."""
     try:
         return redis_client.get(f"verify:{email}")
     except Exception as e:
         print(f"[ERROR] Failed to retrieve token for {email}: {e}")
         return None
-
 
 def send_verification_email(receiver_email, token):
     """Send the verification email, or mock if SMTP credentials are missing."""

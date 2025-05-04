@@ -1,8 +1,8 @@
-"""Initial migration
+"""db
 
-Revision ID: 831d1f4793e8
+Revision ID: 598c55801a8b
 Revises: 
-Create Date: 2025-04-28 04:20:22.949072
+Create Date: 2025-05-04 08:24:12.510051
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '831d1f4793e8'
+revision = '598c55801a8b'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,8 +27,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('email')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('admins',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -69,13 +68,15 @@ def upgrade():
     sa.Column('is_recurring', sa.Boolean(), nullable=True),
     sa.Column('is_anonymous', sa.Boolean(), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=True),
-    sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('donor_id', sa.Integer(), nullable=False),
     sa.Column('charity_id', sa.Integer(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['charity_id'], ['charities.id'], ),
     sa.ForeignKeyConstraint(['donor_id'], ['donors.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('inventories',
