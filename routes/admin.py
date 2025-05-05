@@ -1,36 +1,60 @@
-from flask import Blueprint, jsonify
-from models.charity import Charity, CharityApplication
-from models.user import User
-from models.story import Story
-from config import db
-from sqlalchemy.exc import SQLAlchemyError
-from auth import admin_required
+from flask import Blueprint, jsonify, request, abort
+from models import db, User, Donor, Charity, Donation
+from sqlalchemy.orm import joinedload
 
-admin_bp = Blueprint('admin_bp', __name__, url_prefix='/admin')
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
-@admin_bp.route('/charities/<int:charity_id>', methods=['DELETE'])
-@admin_required
-def delete_charity(charity_id):
-    try:
-        charity = Charity.query.get(charity_id)
-        if not charity:
-            return jsonify({"error": "Charity not found"}), 404
 
-        
-        Story.query.filter_by(charity_id=charity_id).delete()
+# Get all users with details
+@admin_bp.route('/users', methods=['GET'])
+def get_all_users():
+    users = User.query.all()
+    result = []
 
-        
-        db.session.delete(charity)
+    for user in users:
+        user_data = {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "user_type": user.user_type,
+            "created_at": user.created_at,
+        }
 
-        
-        user = User.query.get(charity_id)
-        if user:
-            user.user_type = "user"
-            db.session.add(user)
+        if isinstance(user, Charity):
+            user_data.update({
+                "organisation_name": user.organisation_name,
+                "organisation_description": user.organisation_description,
+                "logo_url": user.logo_url,
+            })
 
-        db.session.commit()
-        return jsonify({"message": "Charity and all associated data deleted"}), 200
+        elif isinstance(user, Donor):
+            user_data.update({
+                "donation_frequency": user.donation_frequency,
+                "reminder_enabled": user.reminder_enabled,
+                "donations": [
+                    {
+                        "amount": d.amount,
+                        "charity": d.charity.organisation_name if d.charity else "Unknown",
+                        "is_recurring": d.is_recurring,
+                        "is_anonymous": d.is_anonymous,
+                        "status": d.status,
+                        "date": d.created_at.strftime('%Y-%m-%d')
+                    } for d in user.donations
+                ]
+            })
 
-    except SQLAlchemyError as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        result.append(user_data)
+
+    return jsonify(result), 200
+
+
+# Delete user by ID (admin-only)
+@admin_bp.route('/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": f"User {user.name} deleted successfully."}), 200
