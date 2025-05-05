@@ -1,13 +1,18 @@
+import os
 import random
 import string
 import redis
+from redis import exceptions as redis_exceptions
 import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# Configure Redis connection
 import os
 from redis import exceptions as redis_exceptions
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Configure Redis
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 try:
     redis_client = redis.from_url(REDIS_URL, decode_responses=True)
@@ -26,11 +31,11 @@ except redis_exceptions.ConnectionError:
             self._store.pop(key, None)
     redis_client = _DummyRedis()
 
-# Function to generate a 6-digit verification token
 def generate_verification_token(length=6):
+    """Generate a random numeric verification token."""
     return ''.join(random.choices(string.digits, k=length))
 
-# Function to save token temporarily in Redis
+
 def store_token(email, token, expiration_seconds=300):
     try:
         redis_client.setex(f"verify:{email}", expiration_seconds, token)
@@ -39,7 +44,6 @@ def store_token(email, token, expiration_seconds=300):
         print(f"[ERROR] Failed to store token for {email}: {e}")
         raise
 
-# Function to retrieve token from Redis
 def retrieve_token(email):
     try:
         return redis_client.get(f"verify:{email}")
@@ -47,9 +51,9 @@ def retrieve_token(email):
         print(f"[ERROR] Failed to retrieve token for {email}: {e}")
         return None
 
-# Function to send the verification email
 def send_verification_email(receiver_email, token):
-    sender_email = os.getenv("SENDER_EMAIL") 
+    """Send the verification email, or mock if SMTP credentials are missing."""
+    sender_email = os.getenv("SENDER_EMAIL")
     sender_password = os.getenv("SENDER_PASSWORD")
     smtp_server = os.getenv("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(os.getenv("SMTP_PORT", 465))
@@ -65,7 +69,7 @@ def send_verification_email(receiver_email, token):
 
     text = f"Your verification code is: {token}"
     part = MIMEText(text, "plain")
-    message.attach(part1)
+    message.attach(part)
 
     try:
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
@@ -74,4 +78,3 @@ def send_verification_email(receiver_email, token):
     except Exception as e:
         print(f"[ERROR] Failed to send email to {receiver_email}: {e}")
         raise
-

@@ -6,6 +6,8 @@ from datetime import datetime
 from sqlalchemy import Enum
 import enum
 
+# Initialize extensions
+
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 
@@ -17,7 +19,6 @@ class ApplicationStatus(enum.Enum):
 
 class BaseModel(db.Model, SerializerMixin):
     __abstract__ = True
-    
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -30,12 +31,21 @@ class User(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String, unique=False, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-    user_type = db.Column(db.String, nullable=False) 
+    user_type = db.Column(db.String, nullable=False)
     is_verified = db.Column(db.Boolean, default=False)
 
-    charity_application = db.relationship('CharityApplication', back_populates='user', uselist=False, cascade="all, delete-orphan")
-    donations = db.relationship('Donation', back_populates='user', cascade="all, delete-orphan")
-    charity_profile = db.relationship('Charity', back_populates='user', uselist=False, cascade="all, delete-orphan")
+    charity_application = db.relationship(
+        'CharityApplication', back_populates='user', uselist=False,
+        cascade="all, delete-orphan"
+    )
+    donations = db.relationship(
+        'Donation', back_populates='user',
+        cascade="all, delete-orphan"
+    )
+    charity_profile = db.relationship(
+        'Charity', back_populates='user', uselist=False,
+        cascade="all, delete-orphan",  post_update=True
+    )
 
     serialize_rules = ("-charity_application.user","-donations.donor", "-charity_profile.user",)
 
@@ -45,10 +55,6 @@ class User(BaseModel):
     }
 
     def validate_password(self, password):
-        """
-        Validate password to be longer than 8 characters,
-        contain at least one uppercase letter and one digit.
-        """
         if len(password) <= 8:
             return False
         if not re.search(r'[A-Z]', password):
@@ -58,8 +64,6 @@ class User(BaseModel):
         return True
 
     def set_password(self, password):
-        if not self.validate_password(password):
-            raise ValueError("Password must be longer than 8 characters, contain at least one uppercase letter and one digit.")
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
@@ -73,9 +77,12 @@ class Donor(User):
     anonymous_donor = db.Column(db.Boolean, default=False)
     donation_frequency = db.Column(db.String, default='one-time')
 
-    donations = db.relationship('Donation', back_populates='donor', cascade="all, delete-orphan",)
+    donations = db.relationship(
+        'Donation', back_populates='donor',
+        cascade="all, delete-orphan",
+        foreign_keys='Donation.donor_id'
+    )
 
-   
     serialize_rules = ("-donations.donor",)
 
     __mapper_args__ = {
@@ -84,21 +91,25 @@ class Donor(User):
 
 class Donation(BaseModel):
     __tablename__ = 'donations'
- 
+
     amount = db.Column(db.Integer, nullable=False)
     is_recurring = db.Column(db.Boolean, default=False)
-    is_anonymous = db.Column(db.Boolean, default=False)  
-    status = db.Column(db.String(20), default="pending")  
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_anonymous = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default="pending")
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'), nullable=False)
     charity_id = db.Column(db.Integer, db.ForeignKey('charities.id'), nullable=False)
 
-    donor = db.relationship('Donor', back_populates='donations',foreign_keys=[donor_id])
-    user = db.relationship('User', back_populates='donations',foreign_keys=[user_id])
-    charity = db.relationship('Charity', back_populates='donations', foreign_keys=[charity_id])
+    donor = db.relationship(
+        'Donor', back_populates='donations', foreign_keys=[donor_id]
+    )
+    user = db.relationship(
+        'User', back_populates='donations', foreign_keys=[user_id]
+    )
+    charity = db.relationship(
+        'Charity', back_populates='donations', foreign_keys=[charity_id]
+    )
 
     def to_dict_simple(self):
         return {
@@ -112,30 +123,66 @@ class Donation(BaseModel):
 class Charity(User):
     __tablename__ = 'charities'
 
-    id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
+   
+    id = db.Column(
+        db.Integer,
+        db.ForeignKey('users.id'),
+        primary_key=True
+        
+    )
+
     organisation_name = db.Column(db.String(100), nullable=True)
     organisation_description = db.Column(db.String, nullable=True)
     logo_url = db.Column(db.String, nullable=True)
+    goal = db.Column(db.String, nullable=True)
     approved = db.Column(db.Boolean, default=False)
 
-    stories = db.relationship('Story', back_populates='charity', cascade="all, delete-orphan")
-    donations = db.relationship('Donation', back_populates='charity', cascade="all, delete-orphan")
-    inventories = db.relationship('Inventory', back_populates='charity', cascade="all, delete-orphan")
-    user = db.relationship('User', back_populates='charity_profile')
+    # relationships
+    user = db.relationship(
+        'User',
+        back_populates='charity_profile',
+        uselist=False,
+        post_update=True
+    )
+    stories = db.relationship(
+        'Story',
+        back_populates='charity',
+        cascade="all, delete-orphan"
+    )
+    donations = db.relationship(
+        'Donation',
+        back_populates='charity',
+        cascade="all, delete-orphan"
+    )
+    inventories = db.relationship(
+        'Inventory',
+        back_populates='charity',
+        cascade="all, delete-orphan"
+    )
+
+    serialize_rules = (
+        '-stories.charity',
+        '-donations.charity',
+        '-inventories.charity',
+        '-user.charity_profile',
+    )
 
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
-            "description": self.organisation_description,
+            "user_name": self.name,
+            "organisation_name": self.organisation_name,
+            "organisation_description": self.organisation_description,
+            "goal": self.goal,
+            "logo_url": self.logo_url,
+            "approved": self.approved,
             "donations": [donation.to_dict_simple() for donation in self.donations]
         }
-
-    serialize_rules = ('-stories.charity', '-donations.charity', '-inventories.charity',"-user.charity_profile",)
 
     __mapper_args__ = {
         'polymorphic_identity': 'charity',
     }
+
 
 class Admin(User):
     __tablename__ = 'admins'
@@ -162,7 +209,12 @@ class CharityApplication(BaseModel):
     def accept(self):
         self.status = ApplicationStatus.accepted
         if not self.user.charity_profile:
-            charity = Charity(user=self.user, org_name=self.org_name, org_description=self.org_description, approved=True)
+            charity = Charity(
+                user=self.user,
+                organisation_name=self.organisation_name,
+                organisation_description=self.organisation_description,
+                approved=True
+            )
             db.session.add(charity)
         else:
             self.user.charity_profile.approved = True
@@ -193,3 +245,6 @@ class Inventory(BaseModel):
     charity = db.relationship('Charity', back_populates='inventories')
 
     serialize_rules = ("-charity.inventories",)
+
+
+

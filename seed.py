@@ -59,7 +59,8 @@ def seed_data():
             organisation_name="AFRIpads Foundation",
             organisation_description="Manufactures reusable sanitary pads in Africa and empowers women and girls through access and education on menstrual health.",
             logo_url="https://www.afripadsfoundation.org/wp-content/uploads/2021/10/logo-afripads-foundation.png",
-            approved=True
+            approved=True,
+            goal="500000"
         )
         charity1.set_password("AFRIpads123")
         db.session.add(charity1)
@@ -72,7 +73,8 @@ def seed_data():
             organisation_name="ZanaAfrica Foundation",
             organisation_description="Providing Kenyan adolescent girls with sanitary pads and reproductive health education to empower them.",
             logo_url="https://images.squarespace-cdn.com/content/v1/5533c2bfe4b09a66347a97ae/1447286966437-2HCS7T55860O4QIL8I5H/image-asset.jpeg",
-            approved=True
+            approved=True,
+            goal="70000"
         )
         charity2.set_password("ZanaFoundation123")
         db.session.add(charity2)
@@ -85,7 +87,8 @@ def seed_data():
             organisation_name="The Pad Project",
             organisation_description="Working globally to increase access to menstrual products, fight stigma, and advance menstrual equity.",
             logo_url="https://thepadproject.org/wp-content/uploads/2024/06/TPP_Logo.png",
-            approved=True
+            approved=True,
+            goal="900000"
         )
         charity3.set_password("Padproject123")
         db.session.add(charity3)
@@ -98,7 +101,8 @@ def seed_data():
             organisation_name="Days for Girls Kenya",
             organisation_description="Provides sustainable menstrual health solutions and education to women and girls worldwide.",
             logo_url="https://www.daysforgirls.org/wp-content/uploads/2021/12/Kenya-light-background-1.png",
-            approved=True
+            approved=True,
+            goal="85000"
         )
         charity4.set_password("Daysforgirls254")
         db.session.add(charity4)
@@ -111,7 +115,8 @@ def seed_data():
             organisation_name="Huru International",
             organisation_description="Fighting period poverty in Africa by distributing reusable pads and providing menstrual health education to keep girls in school.",
             logo_url="https://togetherwomenrise.org/wp-content/uploads/2014/01/Huru-Logo.png",
-            approved=True
+            approved=True,
+            goal="85000"
         )
         charity5.set_password("Huruinternational123")
         db.session.add(charity5)
@@ -124,14 +129,15 @@ def seed_data():
             organisation_name="I Support The Girls",
             organisation_description="Collects and distributes essential items, including menstrual products, to girls and women facing hardship globally.",
             logo_url="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSejkFMkcZL-rKYkoKdQh0PlyhljfJDlouGDg&s",
-            approved=True
+            approved=True,
+            goal="65000"
         )
         charity6.set_password("Isupport254")
         db.session.add(charity6)
 
         # Create Donations
         donation1 = Donation(
-            amount=500,
+            amount=5000,
             is_recurring=True,
             is_anonymous=False,
             status="completed",
@@ -141,7 +147,7 @@ def seed_data():
         db.session.add(donation1)
 
         donation2 = Donation(
-            amount=200,
+            amount=2000,
             is_recurring=False,
             is_anonymous=True,
             status="pending",
@@ -149,6 +155,16 @@ def seed_data():
             charity=charity2
         )
         db.session.add(donation2)
+
+        donation3 = Donation(
+            amount=2000,
+            is_recurring=False,
+            is_anonymous=True,
+            status="pending",
+            donor=donor2,
+            charity=charity2
+        )
+        db.session.add(donation3)
 
         # Create Story
         story1 = Story(
