@@ -6,8 +6,6 @@ import jwt.algorithms
 jwt.algorithms.requires_cryptography = []
 
 import os
-import jwt.algorithms
-jwt.algorithms.requires_cryptography = []
 from flask import Flask
 from flask_migrate import Migrate
 from flask_cors import CORS
@@ -22,10 +20,6 @@ from routes.stories import story_bp
 from routes.Donations import donation_bp
 from routes.inventory import inventory_bp
 from routes.cloudinary_upload import cloudinary_bp
-from models import db, bcrypt
-from utils import redis_client
-from routes.authentication import auth_bp
-# from routes.charity import charity_bp
 
 # Load .env variables
 load_dotenv()
@@ -33,7 +27,9 @@ load_dotenv()
 def create_app():
     app = Flask(__name__)
 
-    CORS(app)
+    # ✅ Correct CORS config: allow frontend from localhost:5173 and allow credentials (e.g. headers)
+    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
+
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tuinue_wasichana.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -45,8 +41,9 @@ def create_app():
     Migrate(app, db)
     JWTManager(app)
 
+    # Register blueprints
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(charity_bp, url_prefix='/charity')
+    app.register_blueprint(charity_bp, url_prefix='/charity')  # base URL becomes /charity
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(story_bp, url_prefix='/stories')
     app.register_blueprint(donation_bp, url_prefix='/donations')
@@ -60,4 +57,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
         print("Database tables created.")
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)

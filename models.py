@@ -245,3 +245,6 @@ class Inventory(BaseModel):
     charity = db.relationship('Charity', back_populates='inventories')
 
     serialize_rules = ("-charity.inventories",)
+
+
+
