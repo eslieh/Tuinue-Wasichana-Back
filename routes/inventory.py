@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import db, Inventory, Charity
 from datetime import datetime
 
-inventory_bp = Blueprint('inventory', __name__, url_prefix='/inventory')
+inventory_bp = Blueprint('inventory', __name__)
 
 
 # GET: All inventory items for a specific charity

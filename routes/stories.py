@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from models import db, Story, Charity
 from datetime import datetime
 
-story_bp = Blueprint('story', __name__, url_prefix='/stories')
+story_bp = Blueprint('story', __name__)
 
 
 # GET: Get all stories for a specific charity

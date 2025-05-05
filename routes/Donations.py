@@ -1,8 +1,14 @@
 from flask import Blueprint, request, jsonify
-from models import db, Donation, Charity, Donor
+from models import db, Donation, Charity,Donor
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 
-donation_bp = Blueprint('donation', __name__, url_prefix='/donations')
+donation_bp = Blueprint('donation', __name__)
+
+
+@donation_bp.route('/test', methods=['GET'])
+def get_test():
+    return jsonify({"error":"error not here"}), 200
 
 
 # GET: View all donations for a single charity
@@ -26,16 +32,23 @@ def get_charity_donations(charity_id):
     return jsonify(donation_list), 200
 
 
-# POST: Donor makes a donation to a charity
-@donation_bp.route('/', methods=['POST'])
+@donation_bp.route('/donate', methods=['POST'])
+@jwt_required()
 def make_donation():
     data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid or missing JSON data."}), 400
 
-    required_fields = ['donor_id', 'charity_id', 'amount', 'donation_frequency', 'is_anonymous']
+    required_fields = ['charity_id', 'amount', 'donation_frequency', 'is_anonymous']
     if not all(field in data for field in required_fields):
-        return jsonify({"error": "Missing required fields."}), 400
+        return jsonify({"error": "Missing required fields."}), 403
 
-    donor = Donor.query.get(data['donor_id'])
+    current = get_jwt_identity()
+    donor_id = current['id']
+    if not donor_id:
+        return jsonify({'error': 'You are not authenticated, please login'}), 401
+
+    donor = Donor.query.get(donor_id)
     charity = Charity.query.get(data['charity_id'])
 
     if not donor:
@@ -43,17 +56,17 @@ def make_donation():
     if not charity:
         return jsonify({"error": "Charity not found."}), 404
 
-    # Update donation frequency on donor profile
     donor.donation_frequency = data['donation_frequency']
 
     new_donation = Donation(
         amount=data['amount'],
         is_anonymous=data['is_anonymous'],
         is_recurring=(data['donation_frequency'].lower() != "one-time"),
-        donor=donor,
-        charity=charity,
-        user=donor  # link to user as well
+        donor_id=donor_id,
+        charity_id=charity.id,
+        user_id=donor.id
     )
+
     db.session.add(new_donation)
     db.session.commit()
 
