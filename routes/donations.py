@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from models import db, Donation, Charity,Donor
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from datetime import datetime
 
 donation_bp = Blueprint('donation', __name__)
@@ -43,8 +43,8 @@ def make_donation():
     if not all(field in data for field in required_fields):
         return jsonify({"error": "Missing required fields."}), 403
 
-    current = get_jwt_identity()
-    donor_id = current.get('id')
+    # current = get_jwt_identity()
+    donor_id = get_jwt_identity()
     if not donor_id:
         return jsonify({'error': 'You are not authenticated, please login'}), 401
 

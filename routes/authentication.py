@@ -1,15 +1,9 @@
 import json
 import redis
 import os
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity
-)
-from models import Admin, Donor, Charity, db
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
+
 from flask import Blueprint, request, jsonify, session
-from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity
-)
 from models import Admin, Donor, Charity, User, db
 from utils import generate_verification_token, send_verification_email, redis_client
 from datetime import timedelta
@@ -122,19 +116,22 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({"error": "Invalid email or password."}), 401
 
-    raw_token = create_access_token(
-        identity={
-            'id': user.id,
-            'email': user.email,
-            'user_type': user.__class__.__name__.lower()
-        },
+    identity = str(user.id)
+
+    # Extra data goes into additional_claims
+    additional_claims = {
+        'email': user.email,
+        'user_type': user.__class__.__name__.lower()
+    }
+
+    access_token = create_access_token(
+        identity=identity,
+        additional_claims=additional_claims,
         expires_delta=timedelta(days=1)
     )
-    if isinstance(raw_token, (bytes, bytearray, memoryview)):
-        access_token = raw_token.decode('utf-8')
-    else:
-        access_token = str(raw_token)    
-    
+    if isinstance(access_token, (bytes, bytearray, memoryview)):
+        access_token = access_token.decode('utf-8')
+
     session['user_id'] = user.id
     session['user_type'] = user.__class__.__name__.lower()
 
@@ -152,14 +149,11 @@ def login():
 @auth_bp.route('/profile', methods=['GET'])
 @jwt_required()
 def profile():
-    current = get_jwt_identity()
-    if not current:
-        return jsonify({
-            "error":"user not authenticate"
-        }), 403
-    
+    current_id = get_jwt_identity()  # This is just user.id as a string
+    claims = get_jwt()  # This gets the custom claims
+
     return jsonify({
-        "id": current.get('id'),
-        "email": current.get('email'),
-        "user_type": current.get('user_type')
+        "id": current_id,
+        "email": claims.get('email'),
+        "user_type": claims.get('user_type')
     }), 200
