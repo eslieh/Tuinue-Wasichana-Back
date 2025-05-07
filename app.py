@@ -17,7 +17,7 @@ from routes.authentication import auth_bp
 from routes.charity import charity_bp 
 from routes.admin import admin_bp
 from routes.stories import story_bp
-from routes.Donations import donation_bp
+from routes.donations import donation_bp
 from routes.inventory import inventory_bp
 from routes.cloudinary_upload import cloudinary_bp
 
