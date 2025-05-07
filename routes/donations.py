@@ -44,7 +44,7 @@ def make_donation():
         return jsonify({"error": "Missing required fields."}), 403
 
     current = get_jwt_identity()
-    donor_id = current['id']
+    donor_id = current.get('id')
     if not donor_id:
         return jsonify({'error': 'You are not authenticated, please login'}), 401
 

@@ -159,7 +159,7 @@ def profile():
         }), 403
     
     return jsonify({
-        "id": current['id'],
-        "email": current['email'],
-        "user_type": current['user_type']
+        "id": current.get('id'),
+        "email": current.get('email'),
+        "user_type": current.get('user_type')
     }), 200
