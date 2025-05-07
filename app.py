@@ -26,10 +26,12 @@ load_dotenv()
 
 def create_app():
     app = Flask(__name__)
-
-    # ✅ Correct CORS config: allow frontend from localhost:5173 and allow credentials (e.g. headers)
-    CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:5173"}})
-
+    CORS(app, resources={r"/*":{
+        "origins": ["http://localhost:5173", "http://127.0.0.1:5174"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }})
 
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tuinue_wasichana.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
