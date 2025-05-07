@@ -44,8 +44,8 @@ def get_charity_details(charity_id):
 @charity_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_or_update_charity_profile():
-    identity = get_jwt_identity()
-    user_id = identity.get('id')
+    # identity = get_jwt_identity()
+    user_id = get_jwt_identity()
     if not user_id:
         return jsonify({"error": "Unauthorized. Please log in."}), 401
 
@@ -84,8 +84,8 @@ def create_or_update_charity_profile():
 @charity_bp.route('/<int:charity_id>', methods=['PUT'])
 @jwt_required()
 def update_charity(charity_id):
-    identity = get_jwt_identity()
-    user_id = identity.get('id')
+    user_id = get_jwt_identity()
+    # user_id = identity.get('id')
     if not user_id:
         return jsonify({"error": "Unauthorized. Please log in."}), 401
 
@@ -117,8 +117,8 @@ def update_charity(charity_id):
 @charity_bp.route('/<int:charity_id>', methods=['DELETE'])
 @jwt_required()
 def delete_charity(charity_id):
-    identity = get_jwt_identity()
-    user_id = identity.get('id')
+    user_id = get_jwt_identity()
+    # user_id = identity.get('id')
     if not user_id:
         return jsonify({"error": "Unauthorized. Please log in."}), 401
 
