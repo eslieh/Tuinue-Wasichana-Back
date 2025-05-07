@@ -68,7 +68,6 @@ class User(BaseModel):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
-
 class Donor(User):
     __tablename__ = 'donors'
 
@@ -182,8 +181,6 @@ class Charity(User):
     __mapper_args__ = {
         'polymorphic_identity': 'charity',
     }
-
-
 class Admin(User):
     __tablename__ = 'admins'
 
