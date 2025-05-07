@@ -17,8 +17,8 @@ Flask-Mail
 flask-marshmallow
 Flask-Migrate
 Flask-SQLAlchemy
-gunicorn
 greenlet
+gunicorn
 idna
 itsdangerous
 Jinja2
